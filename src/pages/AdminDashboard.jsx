@@ -191,12 +191,15 @@ export default function AdminDashboard() {
           precioOriginal: res.precioOriginal || prev.precioOriginal,
           precioOferta: res.precioOferta || prev.precioOferta,
           descuentoPorcentaje: res.descuentoPorcentaje || prev.descuentoPorcentaje,
+          categoria: res.categoria || prev.categoria,
           envioGratis: res.envioGratis ?? prev.envioGratis,
           originalMeliUrl: prev.originalMeliUrl || res.permalink || urlToUse
         }));
         setFeedbackMessage({
           type: "success",
-          text: `¡Datos extraídos con éxito! Publicación: ${res.mlItemId}`
+          text: res.aviso 
+            ? `⚡ ${res.aviso}` 
+            : `¡Datos extraídos con éxito! Publicación: ${res.mlItemId}`
         });
       } else {
         setFeedbackMessage({

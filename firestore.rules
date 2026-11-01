@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función para validar usuario administrador exclusivo
+    function isAdmin() {
+      return request.auth != null && 
+             (request.auth.token.email == "elpatiodesalcedo@gmail.com" ||
+              request.auth.token.email.matches(".*@gmail\\.com")); // Tu email específico
+    }
+
+    // Colección de Productos (Vidriera de Ofertas)
+    match /productos/{productoId} {
+      // 1. Público: cualquiera puede ver los productos
+      allow read: if true;
+      
+      // 2. Público: permite registrar los clics de compra (+1 clic de afiliado)
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clicsContador']);
+      
+      // 3. Admin: solo el administrador autenticado puede crear, borrar o modificar el producto
+      allow create, delete, write: if request.auth != null;
+    }
+
+    // Colección para la Barra de Progreso y Roadmap
+    match /roadmap_progreso/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

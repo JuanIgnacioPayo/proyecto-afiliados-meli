@@ -571,9 +571,21 @@ export default function AdminDashboard() {
               {/* Sección 1: Links e Integración */}
               <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Link de Afiliado Generado (meli.la/...) *
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Link de Afiliado Generado (meli.la/...) *
+                    </label>
+                    <a
+                      href="https://www.mercadolibre.com.ar/afiliados/hub?is_affiliate=true#menu-user"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-0.5 rounded-lg transition"
+                      title="Abrir tu panel oficial de Afiliados de MeLi"
+                    >
+                      <span>Abrir Hub de Afiliados MeLi</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                   <input
                     type="url"
                     required

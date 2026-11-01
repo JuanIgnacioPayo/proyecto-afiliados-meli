@@ -117,7 +117,7 @@ export const INITIAL_ROADMAP_PHASES = [
         requiereAccionManual: true,
         ayuda: "Usá el formulario 'Cargar Nueva Oferta' en la pestaña Catálogo.",
         enlaces: [
-          { texto: "Portal Afiliados Mercado Libre", url: "https://afiliados.mercadolibre.com.ar/" },
+          { texto: "Portal Afiliados Mercado Libre", url: "https://www.mercadolibre.com.ar/afiliados/hub?is_affiliate=true#menu-user" },
           { texto: "Ir a Cargar Oferta", tab: "nuevo" }
         ]
       },

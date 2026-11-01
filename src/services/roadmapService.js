@@ -93,7 +93,7 @@ export const INITIAL_ROADMAP_PHASES = [
         id: "2-4",
         titulo: "Prueba de Login de Administrador",
         detalle: "Verificar inicio de sesión exitoso con Google y bloqueo a usuarios no autorizados.",
-        completada: false,
+        completada: true,
         requiereAccionManual: true,
         accionTest: "testAuth",
         enlaces: [
@@ -182,13 +182,13 @@ export const INITIAL_ROADMAP_PHASES = [
       },
       {
         id: "4-4",
-        titulo: "Testear Extractor Automático de ML",
-        detalle: "Pegar un link de Mercado Libre en el cargador y presionar 'Autocompletar Datos'.",
-        completada: false,
-        requiereAccionManual: true,
+        titulo: "Extractor de ML y Radar de Nichos Ganadores",
+        detalle: "Se construyó e integró el Radar de Tendencias en vivo, analizador de score (0 a 100), guiones de Reels y autocompletado de links.",
+        completada: true,
+        requiereAccionManual: false,
         enlaces: [
-          { texto: "Ver Ofertas de Mercado Libre", url: "https://www.mercadolibre.com.ar/ofertas" },
-          { texto: "Ir a Probar Extractor", tab: "nuevo" }
+          { texto: "Abrir Radar de Oportunidades", tab: "radar" },
+          { texto: "Ver Ofertas de Mercado Libre", url: "https://www.mercadolibre.com.ar/ofertas" }
         ]
       }
     ]
@@ -220,8 +220,18 @@ export const INITIAL_ROADMAP_PHASES = [
       },
       {
         id: "5-3",
+        titulo: "Vincular Repositorio en GitHub",
+        detalle: "Repositorio git configurado y sincronizado con rama main en https://github.com/JuanIgnacioPayo/proyecto-afiliados-meli",
+        completada: true,
+        requiereAccionManual: false,
+        enlaces: [
+          { texto: "Ver Código en GitHub", url: "https://github.com/JuanIgnacioPayo/proyecto-afiliados-meli" }
+        ]
+      },
+      {
+        id: "5-4",
         titulo: "Vincular URL en Biografías y Crear Plantilla de Reel",
-        detalle: "Colocar el enlace en tu Link in Bio con el llamado a la acción: 'Buscá el número del Reel en la web para el descuento directo'.",
+        detalle: "Colocar el enlace https://meli-afiliados.web.app en tu Link in Bio con el llamado a la acción: 'Buscá el número del Reel en la web para el descuento directo'.",
         completada: false,
         requiereAccionManual: true,
         enlaces: [

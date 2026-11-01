@@ -34,6 +34,7 @@ import { fetchMeliProductData } from "../services/meliExtractor";
 import { sendTelegramOffer } from "../services/telegramService";
 import ImplementationRoadmap from "../components/ImplementationRoadmap";
 import NicheRadar from "../components/NicheRadar";
+import ScreenshotDropzone from "../components/ScreenshotDropzone";
 import { auth, googleProvider, isFirebaseConfigured } from "../firebase";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 
@@ -101,6 +102,23 @@ export default function AdminDashboard() {
     setFeedbackMessage({
       type: "success",
       text: "¡Producto importado desde el Radar! Ahora pegá tu link de afiliado meli.la y guardá la oferta."
+    });
+  };
+
+  const handleScreenshotDataExtracted = (data) => {
+    setFormData(prev => ({
+      ...prev,
+      titulo: data.titulo || prev.titulo,
+      precioOriginal: data.precioOriginal || prev.precioOriginal,
+      precioOferta: data.precioOferta || prev.precioOferta,
+      descuentoPorcentaje: data.descuentoPorcentaje || prev.descuentoPorcentaje,
+      categoria: data.categoria || prev.categoria,
+      envioGratis: data.envioGratis ?? prev.envioGratis,
+      imagenUrl: data.imagenUrl || prev.imagenUrl
+    }));
+    setFeedbackMessage({
+      type: "success",
+      text: "¡Captura procesada con éxito! Título, precios, descuento y foto cargados en el formulario."
     });
   };
 
@@ -574,6 +592,11 @@ export default function AdminDashboard() {
                   #{formData.codigoNumerico}
                 </span>
               </div>
+            </div>
+
+            {/* Escáner Inteligente de Captura / OCR */}
+            <div className="mb-6">
+              <ScreenshotDropzone onDataExtracted={handleScreenshotDataExtracted} />
             </div>
 
             <form onSubmit={handleSubmitProduct} className="space-y-6">

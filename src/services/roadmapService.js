@@ -204,14 +204,14 @@ export const INITIAL_ROADMAP_PHASES = [
         id: "5-1",
         titulo: "Validar compilación de producción (Build)",
         detalle: "Ejecutar 'npm run build' en tu terminal para asegurar que el bundle de Vite genera la carpeta dist sin errores.",
-        completada: false,
+        completada: true,
         requiereAccionManual: true
       },
       {
         id: "5-2",
         titulo: "Deploy en Firebase Hosting",
         detalle: "Ejecutar 'npx firebase deploy --only hosting' para tener la web activa con SSL gratis y dominio .web.app.",
-        completada: false,
+        completada: true,
         requiereAccionManual: true,
         ayuda: "Ejecutá 'npm run build' y luego 'npx firebase deploy --only hosting'.",
         enlaces: [

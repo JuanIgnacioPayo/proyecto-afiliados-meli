@@ -47,6 +47,18 @@ export default function ImplementationRoadmap({ onTaskCompleted, onNavigateTab }
       setLoading(true);
       const state = await getRoadmapState();
       setFases(state);
+
+      // Auto-abrir en la primera fase que tenga tareas pendientes
+      const primerFasePendiente = state.find(f => 
+        f.tareas && f.tareas.some(t => !t.completada)
+      );
+
+      if (primerFasePendiente) {
+        setActiveFase(primerFasePendiente.id);
+      } else if (state.length > 0) {
+        setActiveFase(state[state.length - 1].id);
+      }
+
       setLoading(false);
     }
     load();
@@ -70,6 +82,15 @@ export default function ImplementationRoadmap({ onTaskCompleted, onNavigateTab }
     await saveRoadmapState(updated);
     if (onTaskCompleted) {
       onTaskCompleted(calculateProgress(updated));
+    }
+
+    // Si la fase actual se completó al 100%, avanzar automáticamente a la siguiente pendiente
+    const currentPhase = updated.find(f => f.id === faseId);
+    if (currentPhase && currentPhase.tareas.every(t => t.completada)) {
+      const nextPending = updated.find(f => f.tareas.some(t => !t.completada));
+      if (nextPending) {
+        setActiveFase(nextPending.id);
+      }
     }
   };
 
@@ -271,11 +292,15 @@ export default function ImplementationRoadmap({ onTaskCompleted, onNavigateTab }
                       <h3 className="font-bold text-slate-900 text-base truncate">
                         {fase.titulo}
                       </h3>
-                      {isAllCompleted && (
+                      {isAllCompleted ? (
                         <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
                           <Check className="w-3 h-3" /> Completada
                         </span>
-                      )}
+                      ) : isOpen ? (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-900 bg-yellow-100 border border-yellow-300 px-2 py-0.5 rounded-full">
+                          ⚡ En Curso
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-xs text-slate-500 truncate mt-0.5">
                       {fase.descripcion}

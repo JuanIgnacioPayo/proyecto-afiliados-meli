@@ -17,6 +17,7 @@ dist-ssr
 .firebase
 
 # Editor directories and files
+*.traineddata
 .vscode/*
 !.vscode/extensions.json
 .idea

@@ -21,7 +21,9 @@ import {
   Edit3,
   Sliders,
   DollarSign,
-  Compass
+  Compass,
+  X,
+  Save
 } from "lucide-react";
 import { 
   getProducts, 
@@ -71,6 +73,11 @@ export default function AdminDashboard() {
   const [feedbackMessage, setFeedbackMessage] = useState(null);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
   const [sendingTelegramId, setSendingTelegramId] = useState(null);
+
+  // Estado de Edición de Producto
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Escuchar estado de autenticación
   useEffect(() => {
@@ -317,6 +324,70 @@ export default function AdminDashboard() {
       });
     }
     setSendingTelegramId(null);
+  };
+
+  // Iniciar edición de producto
+  const handleStartEdit = (product) => {
+    setEditingProduct(product);
+    setEditFormData({
+      codigoNumerico: product.codigoNumerico || 101,
+      titulo: product.titulo || "",
+      linkAfiliado: product.linkAfiliado || "",
+      originalMeliUrl: product.originalMeliUrl || "",
+      imagenUrl: product.imagenUrl || "",
+      precioOriginal: product.precioOriginal || "",
+      precioOferta: product.precioOferta || "",
+      descuentoPorcentaje: product.descuentoPorcentaje || 0,
+      categoria: product.categoria || "Tecnología",
+      envioGratis: Boolean(product.envioGratis),
+      destacado: Boolean(product.destacado),
+      activo: product.activo !== false
+    });
+  };
+
+  // Recalcular % de descuento en modal de edición
+  const handleEditPriceChange = (field, value) => {
+    setEditFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      const orig = Number(field === "precioOriginal" ? value : prev.precioOriginal);
+      const ofer = Number(field === "precioOferta" ? value : prev.precioOferta);
+      if (orig && ofer && orig > ofer) {
+        updated.descuentoPorcentaje = Math.round(((orig - ofer) / orig) * 100);
+      } else {
+        updated.descuentoPorcentaje = 0;
+      }
+      return updated;
+    });
+  };
+
+  // Guardar cambios editados
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setSavingEdit(true);
+    try {
+      const updates = {
+        ...editFormData,
+        codigoNumerico: Number(editFormData.codigoNumerico) || editingProduct.codigoNumerico,
+        precioOriginal: Number(editFormData.precioOriginal) || 0,
+        precioOferta: Number(editFormData.precioOferta) || 0,
+        descuentoPorcentaje: Number(editFormData.descuentoPorcentaje) || 0
+      };
+      await updateProduct(editingProduct.id, updates);
+      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...updates } : p));
+      setFeedbackMessage({
+        type: "success",
+        text: `¡Oferta #${updates.codigoNumerico} actualizada exitosamente!`
+      });
+      setEditingProduct(null);
+    } catch (err) {
+      setFeedbackMessage({
+        type: "error",
+        text: `Error al actualizar producto: ${err.message}`
+      });
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   // Alternar estado activo / pausado
@@ -946,9 +1017,16 @@ export default function AdminDashboard() {
                                 <span className="font-semibold text-slate-900 line-clamp-1 block" title={p.titulo}>
                                   {p.titulo}
                                 </span>
-                                <span className="text-[11px] text-slate-600 block">
-                                  {p.categoria}
-                                </span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[11px] text-slate-500 block">
+                                    {p.categoria}
+                                  </span>
+                                  {p.linkAfiliado && (
+                                    <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded font-mono truncate max-w-[140px]" title={p.linkAfiliado}>
+                                      {p.linkAfiliado.replace(/^https?:\/\//, '')}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -1009,6 +1087,13 @@ export default function AdminDashboard() {
                           {/* Acciones */}
                           <td className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleStartEdit(p)}
+                                className="p-1.5 text-slate-500 hover:text-amber-600 rounded-md hover:bg-amber-50 transition"
+                                title="Editar oferta y links"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
                               <a
                                 href={p.linkAfiliado}
                                 target="_blank"
@@ -1038,6 +1123,217 @@ export default function AdminDashboard() {
 
           </div>
         )}
+
+      {/* Modal de Edición de Producto y Links */}
+      {editingProduct && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 p-6 text-white flex items-center justify-between">
+              <div>
+                <span className="text-xs uppercase font-black tracking-widest text-amber-100">Editor de Ofertas</span>
+                <h3 className="text-xl font-black mt-0.5 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5" />
+                  Editar Oferta #{editFormData.codigoNumerico}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setEditingProduct(null)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-5">
+              {/* Título y Código */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Código #</label>
+                  <input
+                    type="number"
+                    value={editFormData.codigoNumerico || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, codigoNumerico: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Título del Producto</label>
+                  <input
+                    type="text"
+                    value={editFormData.titulo || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, titulo: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Link de Afiliado (meli.la) */}
+              <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-amber-900 uppercase">
+                    🔗 Enlace de Afiliado (meli.la)
+                  </label>
+                  {editFormData.linkAfiliado && (
+                    <a
+                      href={editFormData.linkAfiliado}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold text-amber-700 hover:text-amber-900 underline flex items-center gap-1"
+                    >
+                      Probar link <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+                <input
+                  type="url"
+                  value={editFormData.linkAfiliado || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, linkAfiliado: e.target.value })}
+                  placeholder="https://meli.la/..."
+                  className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none font-mono"
+                  required
+                />
+                <p className="text-[11px] text-amber-800/80">
+                  Este es el link con tu cookie que genera tus comisiones. Podés modificarlo en cualquier momento si generaste uno nuevo.
+                </p>
+              </div>
+
+              {/* Precios y Descuento */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Precio Original ($)</label>
+                  <input
+                    type="number"
+                    value={editFormData.precioOriginal || ""}
+                    onChange={(e) => handleEditPriceChange("precioOriginal", e.target.value)}
+                    placeholder="Ej: 469999"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Precio Oferta ($)</label>
+                  <input
+                    type="number"
+                    value={editFormData.precioOferta || ""}
+                    onChange={(e) => handleEditPriceChange("precioOferta", e.target.value)}
+                    placeholder="Ej: 395000"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-emerald-600 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">% Descuento</label>
+                  <input
+                    type="number"
+                    value={editFormData.descuentoPorcentaje ?? 0}
+                    onChange={(e) => setEditFormData({ ...editFormData, descuentoPorcentaje: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl font-bold text-slate-700 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Categoría e Imagen URL */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Categoría</label>
+                  <select
+                    value={editFormData.categoria || "Tecnología"}
+                    onChange={(e) => setEditFormData({ ...editFormData, categoria: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                  >
+                    <option value="Tecnología">Tecnología</option>
+                    <option value="Celulares">Celulares</option>
+                    <option value="Electrodomésticos">Electrodomésticos</option>
+                    <option value="Hogar">Hogar</option>
+                    <option value="Moda">Moda</option>
+                    <option value="Herramientas">Herramientas</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">URL de la Imagen</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={editFormData.imagenUrl || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, imagenUrl: e.target.value })}
+                      placeholder="https://http2.mlstatic.com/..."
+                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                    />
+                    {editFormData.imagenUrl && (
+                      <img 
+                        src={editFormData.imagenUrl} 
+                        alt="Preview" 
+                        className="w-10 h-10 object-contain rounded-lg border border-slate-200 bg-white"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Switches: Envío Gratis, Destacado, Activo */}
+              <div className="flex flex-wrap gap-4 pt-2 border-t border-slate-200">
+                <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.envioGratis || false}
+                    onChange={(e) => setEditFormData({ ...editFormData, envioGratis: e.target.checked })}
+                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                  />
+                  🚚 Envío Gratis
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.destacado || false}
+                    onChange={(e) => setEditFormData({ ...editFormData, destacado: e.target.checked })}
+                    className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                  />
+                  ⭐ Destacado
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.activo !== false}
+                    onChange={(e) => setEditFormData({ ...editFormData, activo: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  🟢 Visible en Catálogo Público
+                </label>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-900 font-black shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50"
+                >
+                  {savingEdit ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Guardar Cambios
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       </main>
 

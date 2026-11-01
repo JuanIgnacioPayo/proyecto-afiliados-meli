@@ -168,11 +168,11 @@ export default function AdminDashboard() {
 
   // Autocompletar con Extractor de Mercado Libre
   const handleAutoExtract = async () => {
-    const urlToUse = formData.originalMeliUrl || formData.linkAfiliado;
+    const urlToUse = formData.originalMeliUrl?.trim() || formData.linkAfiliado?.trim();
     if (!urlToUse) {
       setFeedbackMessage({
         type: "error",
-        text: "Pegá primero el link de Mercado Libre (o tu link de afiliado) para extraer los datos."
+        text: "Pegá primero el enlace del producto en Mercado Libre (ej: articulo.mercadolibre.com.ar/MLA-...) o el código MLA para autocompletar."
       });
       return;
     }
@@ -180,31 +180,38 @@ export default function AdminDashboard() {
     setExtracting(true);
     setFeedbackMessage(null);
 
-    const res = await fetchMeliProductData(urlToUse);
-    if (res.success) {
-      setFormData(prev => ({
-        ...prev,
-        titulo: res.titulo || prev.titulo,
-        mlItemId: res.mlItemId || prev.mlItemId,
-        imagenUrl: res.imagenUrl || prev.imagenUrl,
-        precioOriginal: res.precioOriginal || prev.precioOriginal,
-        precioOferta: res.precioOferta || prev.precioOferta,
-        descuentoPorcentaje: res.descuentoPorcentaje || prev.descuentoPorcentaje,
-        envioGratis: res.envioGratis ?? prev.envioGratis,
-        // Si pegó la URL de ML en el campo de afiliado y no tenía link de afiliado, mantenerla
-        originalMeliUrl: prev.originalMeliUrl || res.permalink || urlToUse
-      }));
+    try {
+      const res = await fetchMeliProductData(urlToUse);
+      if (res.success) {
+        setFormData(prev => ({
+          ...prev,
+          titulo: res.titulo || prev.titulo,
+          mlItemId: res.mlItemId || prev.mlItemId,
+          imagenUrl: res.imagenUrl || prev.imagenUrl,
+          precioOriginal: res.precioOriginal || prev.precioOriginal,
+          precioOferta: res.precioOferta || prev.precioOferta,
+          descuentoPorcentaje: res.descuentoPorcentaje || prev.descuentoPorcentaje,
+          envioGratis: res.envioGratis ?? prev.envioGratis,
+          originalMeliUrl: prev.originalMeliUrl || res.permalink || urlToUse
+        }));
+        setFeedbackMessage({
+          type: "success",
+          text: `¡Datos extraídos con éxito! Publicación: ${res.mlItemId}`
+        });
+      } else {
+        setFeedbackMessage({
+          type: "warning",
+          text: res.error
+        });
+      }
+    } catch (err) {
       setFeedbackMessage({
-        type: "success",
-        text: `¡Datos extraídos con éxito! Publicación: ${res.mlItemId}`
+        type: "error",
+        text: `Error al extraer datos: ${err.message}`
       });
-    } else {
-      setFeedbackMessage({
-        type: "warning",
-        text: `${res.error}. Podés cargar o ajustar los datos manualmente.`
-      });
+    } finally {
+      setExtracting(false);
     }
-    setExtracting(false);
   };
 
   // Recalcular % de descuento automáticamente al cambiar precios
@@ -570,10 +577,39 @@ export default function AdminDashboard() {
               
               {/* Sección 1: Links e Integración */}
               <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
+                {/* Paso 1: Link original para extraer */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">
+                    1. Enlace del Producto en Mercado Libre o Código MLA (para autocompletar)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="https://articulo.mercadolibre.com.ar/MLA-... o MLA12345678"
+                      value={formData.originalMeliUrl}
+                      onChange={(e) => setFormData({ ...formData, originalMeliUrl: e.target.value })}
+                      className="flex-grow px-4 py-2.5 bg-white border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-blue-600 text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={extracting}
+                      onClick={handleAutoExtract}
+                      className="px-4 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 flex-shrink-0"
+                    >
+                      <Zap className={`w-4 h-4 fill-slate-950 ${extracting ? "animate-spin" : ""}`} />
+                      <span>{extracting ? "Extrayendo..." : "Autocompletar"}</span>
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-slate-500 mt-1 block">
+                    Pegá el enlace directo del producto (o su código MLA) y presioná "Autocompletar" para cargar foto, título y precio.
+                  </span>
+                </div>
+
+                {/* Paso 2: Link de afiliado */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Link de Afiliado Generado (meli.la/...) *
+                    <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      2. Link de Afiliado Oficial (meli.la/...) *
                     </label>
                     <a
                       href="https://www.mercadolibre.com.ar/afiliados/hub?is_affiliate=true#menu-user"
@@ -595,32 +631,8 @@ export default function AdminDashboard() {
                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-blue-600 text-sm"
                   />
                   <span className="text-[11px] text-slate-500 mt-1 block">
-                    Es el enlace con tu cookie de afiliado donde ganás la comisión.
+                    Es el enlace con tu cookie de afiliado donde Mercado Libre te acredita las comisiones.
                   </span>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    URL Original de la Publicación de Mercado Libre
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      placeholder="https://articulo.mercadolibre.com.ar/MLA-..."
-                      value={formData.originalMeliUrl}
-                      onChange={(e) => setFormData({ ...formData, originalMeliUrl: e.target.value })}
-                      className="flex-grow px-4 py-2.5 bg-white border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-blue-600 text-sm"
-                    />
-                    <button
-                      type="button"
-                      disabled={extracting}
-                      onClick={handleAutoExtract}
-                      className="px-4 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 flex-shrink-0"
-                    >
-                      <Zap className={`w-4 h-4 fill-slate-950 ${extracting ? "animate-spin" : ""}`} />
-                      <span>{extracting ? "Extrayendo..." : "Autocompletar"}</span>
-                    </button>
-                  </div>
                 </div>
               </div>
 
